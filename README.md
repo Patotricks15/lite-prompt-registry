@@ -1,57 +1,130 @@
-# Open Prompt Registry
+# Lite Prompt Registry
 
-A Go service for governing prompts used with an Open Guardrail Layer. It provides immutable prompt versions and an explicit release workflow:
+[![CI](https://github.com/Patotricks15/lite-prompt-registry/actions/workflows/ci.yml/badge.svg)](https://github.com/Patotricks15/lite-prompt-registry/actions/workflows/ci.yml)
+[![Release](https://github.com/Patotricks15/lite-prompt-registry/actions/workflows/release.yml/badge.svg)](https://github.com/Patotricks15/lite-prompt-registry/actions/workflows/release.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-`draft -> in_review -> approved -> rolled_out`
+Fast, in-memory prompt governance and immutable versioning library written in **Rust** with high-level SDK bindings for **Python**, **TypeScript/Node.js**, and **Go**.
 
-A version cannot be approved until it has at least one passing test. The rollout operation marks the selected version as the prompt's production version.
+Ensures prompt templates used across LLM pipelines are versioned, testable, immutable, and strictly tracked without database or network overhead.
 
-## Run
+---
 
-```sh
-go run ./cmd/prompt-registry
+## 📦 Installation
+
+### Python
+```bash
+pip install lite-prompt-registry
 ```
 
-The server listens on `http://localhost:8080`.
-
-## API
-
-| Operation | Endpoint |
-| --- | --- |
-| Health check | `GET /healthz` |
-| Create a prompt | `POST /prompts` |
-| Read prompt and versions | `GET /prompts/{id}` |
-| Create a draft version | `POST /prompts/{id}/versions` |
-| Record a test | `POST /prompts/{id}/versions/{number}/tests` |
-| Request review | `POST /prompts/{id}/versions/{number}/review` |
-| Approve a version | `POST /prompts/{id}/versions/{number}/approve` |
-| Roll out a version | `POST /prompts/{id}/versions/{number}/rollout` |
-
-### Example workflow
-
-```sh
-curl -X POST localhost:8080/prompts -H 'Content-Type: application/json' \
-  -d '{"name":"assistant","description":"Main support prompt"}'
-
-curl -X POST localhost:8080/prompts/prompt-1/versions -H 'Content-Type: application/json' \
-  -d '{"template":"Help with: {{question}}","author":"author@example.com"}'
-
-curl -X POST localhost:8080/prompts/prompt-1/versions/1/tests -H 'Content-Type: application/json' \
-  -d '{"name":"prompt-injection suite","passed":true}'
-
-curl -X POST localhost:8080/prompts/prompt-1/versions/1/review -H 'Content-Type: application/json' \
-  -d '{"actor":"reviewer@example.com"}'
-
-curl -X POST localhost:8080/prompts/prompt-1/versions/1/approve -H 'Content-Type: application/json' \
-  -d '{"actor":"approver@example.com"}'
-
-curl -X POST localhost:8080/prompts/prompt-1/versions/1/rollout
+### TypeScript / Node.js
+```bash
+npm install @patotricks15/lite-prompt-registry
 ```
 
-## Test
-
-```sh
-go test ./...
+### Go
+```bash
+go get github.com/Patotricks15/lite-prompt-registry/bindings/go
 ```
 
-This first implementation stores state in memory. Replace `registry.Service` storage with a durable repository when deploying it across multiple instances.
+### Rust (Core Crate)
+```toml
+[dependencies]
+lite-prompt-registry = "0.1"
+```
+
+---
+
+## 🚀 Quickstart & Usage Examples
+
+### 1. Python
+```python
+from lite_prompt_registry import PromptRegistry
+
+# 1. Load prompt registry directly via Rust
+registry = PromptRegistry.from_file("examples/prompts.yaml")
+
+# 2. Render versioned prompt template with runtime variables
+prompt = registry.render(
+    prompt_id="customer_support",
+    variables={"company": "FastCloud", "user_query": "How do I upgrade?"},
+    version=1,
+)
+
+print(prompt)
+# You are a helpful support agent for FastCloud. Respond politely to: How do I upgrade?
+```
+
+---
+
+### 2. TypeScript / Node.js
+```typescript
+import { PromptRegistry } from '@patotricks15/lite-prompt-registry';
+
+// 1. Initialize registry via Rust Core
+const registry = PromptRegistry.fromFile('examples/prompts.yaml');
+
+// 2. Render versioned template
+const prompt = registry.render('customer_support', {
+  company: 'FastCloud',
+  user_query: 'How do I upgrade?',
+}, 1);
+
+console.log(prompt);
+```
+
+---
+
+### 3. Go
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    litepromptregistry "github.com/Patotricks15/lite-prompt-registry/bindings/go"
+)
+
+func main() {
+    // 1. Rust loads and manages prompt templates in memory
+    registry, err := litepromptregistry.FromFile("examples/prompts.yaml")
+    if err != nil {
+        log.Fatalf("Failed to load prompt registry: %v", err)
+    }
+
+    // 2. Render template with variables
+    prompt, _ := registry.Render("customer_support", map[string]string{
+        "company":    "FastCloud",
+        "user_query": "How do I upgrade?",
+    })
+
+    fmt.Println(prompt)
+}
+```
+
+---
+
+### 4. Rust (Native Core)
+```rust
+use lite_prompt_registry::Registry;
+use std::collections::HashMap;
+use std::error::Error;
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let registry = Registry::from_file("examples/prompts.yaml")?;
+    
+    let mut vars = HashMap::new();
+    vars.insert("company", "FastCloud");
+    vars.insert("user_query", "How do I upgrade?");
+
+    let prompt = registry.render("customer_support", Some(1), &vars)?;
+    println!("Rendered: {}", prompt);
+    Ok(())
+}
+```
+
+---
+
+## 📄 License
+Licensed under Apache-2.0.
