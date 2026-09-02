@@ -1,42 +1,31 @@
 /**
- * Lite Prompt Registry - TypeScript LLM Pipeline Example.
+ * Lite Prompt Registry - High-Level TypeScript Pipeline Example.
  *
- * Demonstrates pulling verified prompt templates before LLM execution.
+ * Loads versioned prompt definitions directly via Rust and renders them for LLMs.
  */
 
-interface PromptMetadata {
-  promptId: number;
-  version: number;
-}
-
-class PromptRegistryClient {
-  private templates: Map<string, string> = new Map([
-    ["1:1", "Translate to Spanish: {{input}}"],
-    ["1:2", "Translate following text into formal European Spanish: {{input}}"],
-  ]);
-
-  getTemplate(promptId: number, version: number): string {
-    const key = `${promptId}:${version}`;
-    const tpl = this.templates.get(key);
-    if (!tpl) throw new Error(`Prompt ${key} not found.`);
-    return tpl;
-  }
-}
-
-async function callLlmWithRegistry(promptId: number, version: number, userInput: string) {
-  const registry = new PromptRegistryClient();
-  const template = registry.getTemplate(promptId, version);
-  const prompt = template.replace("{{input}}", userInput);
-
-  console.log(`\n[Registry] Loaded Prompt #${promptId} (v${version})`);
-  console.log(` -> Formatted text: "${prompt}"`);
-  console.log(" -> [LLM Call]: Generating translation with attached metadata...");
-  return { text: "Simulated translation", promptMetadata: { promptId, version } };
-}
+import { PromptRegistry } from '../bindings/node/index';
 
 async function main() {
-  console.log("=== Lite Prompt Registry - TypeScript Example ===");
-  await callLlmWithRegistry(1, 2, "Good morning, how are you?");
+  console.log('=== Lite Prompt Registry - High-Level TypeScript Example ===');
+
+  // 1. Rust carrega e valida o arquivo de prompts YAML
+  const promptsPath = 'examples/prompts.yaml';
+  console.log(`\n[1] Carregando prompts de '${promptsPath}' via Rust Core...`);
+  const registry = PromptRegistry.fromFile(promptsPath);
+
+  // 2. Renderizando template com contexto
+  const context = {
+    company: 'FastCloud',
+    user_query: 'How do I upgrade to Enterprise?',
+  };
+
+  const rendered = registry.render('customer_support', context, 1);
+  console.log('\n[2] Prompt renderizado (versão v1):');
+  console.log(` -> "${rendered}"`);
+
+  // 3. Enviando ao LLM
+  console.log('\n[3] Enviando prompt consistente ao LLM e rastreando versão da template.');
 }
 
 main().catch(console.error);

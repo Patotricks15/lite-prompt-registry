@@ -1,0 +1,13 @@
+prompts:
+  - id: customer_support
+    name: Customer Support Assistant
+    description: System prompt for general customer support inquiries
+    versions:
+      - version: 1
+        template: "You are a helpful support agent for {company}. Respond politely to: {user_query}"
+        author: ops-team
+        status: rolled_out
+      - version: 2
+        template: "You are an AI support specialist at {company}. Greet the user, review their issue: '{user_query}', and offer step-by-step guidance."
+        author: prompt-eng-team
+        status: approved

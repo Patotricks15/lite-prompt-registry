@@ -1,31 +1,29 @@
 //! Lite Prompt Registry - Rust Pipeline Example.
 //!
-//! Direct Rust core usage to create, version, and fetch prompts.
+//! Demonstrates loading versioned prompts from YAML (examples/prompts.yaml) and rendering.
 
 use lite_prompt_registry::Registry;
+use std::collections::HashMap;
+use std::error::Error;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     println!("=== Lite Prompt Registry - Rust Example ===");
-    let mut registry = Registry::default();
 
-    // 1. Create prompt entity
-    let prompt_id = registry.create_prompt("support_agent", "Primary customer support prompt");
-    println!("Created prompt with ID: {}", prompt_id);
+    // 1. Rust carrega e valida o arquivo de prompts YAML
+    let prompts_path = "examples/prompts.yaml";
+    println!("\n[1] Carregando prompts de '{}'...", prompts_path);
+    let registry = Registry::from_file(prompts_path)?;
 
-    // 2. Add immutable versions
-    let v1 = registry.create_version(prompt_id, "You are a support bot. Help with: {q}", "alice")?;
-    let v2 = registry.create_version(prompt_id, "You are an empathetic support specialist. Resolve: {q}", "bob")?;
+    // 2. Renderização de template imutável com variáveis de contexto
+    let mut vars = HashMap::new();
+    vars.insert("company", "FastCloud");
+    vars.insert("user_query", "How do I upgrade to the Enterprise plan?");
 
-    println!("Registered versions: v{} and v{}", v1, v2);
+    let rendered = registry.render("customer_support", Some(1), &vars)?;
+    println!("\n[2] Prompt renderizado a partir da versão v1:");
+    println!(" -> \"{}\"", rendered);
 
-    // 3. Retrieve prompt for LLM invocation
-    let prompt = registry.get(prompt_id).expect("Prompt exists");
-    let active_version = &prompt.versions[1]; // v2
-
-    println!("\nPreparing LLM call:");
-    println!(" -> Active template: '{}'", active_version.template);
-    println!(" -> Author: {}", active_version.author);
-    println!(" -> Ready to format and send to LLM.");
-
+    // 3. Enviando prompt formatado para o LLM
+    println!("\n[3] Enviando prompt consistente para o LLM e rastreando versão 'customer_support:v1'.");
     Ok(())
 }
