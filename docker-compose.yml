@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  prompt-registry:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lite-prompt-registry
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

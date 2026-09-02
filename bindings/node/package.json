@@ -1,0 +1,6 @@
+{
+  "name": "@lite/prompt-registry",
+  "version": "0.1.0",
+  "scripts": { "build": "napi build --platform --release" },
+  "devDependencies": { "@napi-rs/cli": "^2.18.4" }
+}
